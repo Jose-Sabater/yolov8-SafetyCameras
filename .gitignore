@@ -1,0 +1,7 @@
+*.pt
+*.png
+/path
+/venv
+
+# ignore the tracking for now, to be added after all setup is working in raspberry
+/yolov8_tracking
