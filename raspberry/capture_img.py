@@ -1,3 +1,4 @@
+"""This script captures images from the webcam and returns them as a json object when pinged"""
 import cv2
 import numpy as np
 from flask import Flask, jsonify
@@ -14,6 +15,7 @@ latest_image = None
 
 # Define a function to continuosly read images from the webcam
 def read_images():
+    """Continuosly read images from the webcam and store them in the latest_image variable"""
     global latest_image
     cap = cv2.VideoCapture(0)
     while True:
@@ -31,6 +33,7 @@ threading.Thread(target=read_images, daemon=True).start()
 # Route that returns the most recent image as a json object when pinged
 @app.route("/api/img", methods=["GET"])
 def img_capture():
+    """Return the most recent image as a json object"""
     global latest_image
     if latest_image is not None:
         return jsonify({"image": latest_image.tolist()})

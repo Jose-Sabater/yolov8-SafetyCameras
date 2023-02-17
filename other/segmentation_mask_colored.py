@@ -33,7 +33,7 @@ def box_label(image, box, label="", color=(128, 128, 128), txt_color=(255, 255, 
         )
 
 
-def plot_bboxes(image, boxes, labels=[], colors=[], score=True, conf=None):
+def plot_bboxes(image, boxes, labels=[], colors=[], masks=None, score=True, conf=None):
     # Define COCO Labels
     if labels == []:
         labels = {
@@ -206,8 +206,10 @@ def plot_bboxes(image, boxes, labels=[], colors=[], score=True, conf=None):
             (73, 8, 110),
         ]
 
+    mask_image = np.zeros_like(image)
+
     # plot each boxes
-    for box in boxes:
+    for i, box in enumerate(boxes):
         # add score in label if score=True
         if score:
             label = (
@@ -223,9 +225,28 @@ def plot_bboxes(image, boxes, labels=[], colors=[], score=True, conf=None):
             if box[-2] > conf:
                 color = colors[int(box[-1])]
                 box_label(image, box, label, color)
+
+                if masks is not None:
+                    mask = masks[i]
+                    if len(mask.shape) == 3:
+                        mask = mask[..., 0]  # take first channel if multi-channel mask
+                    mask = (mask * 255).numpy().astype(np.uint8)
+                    alpha = 0.5  # adjust transparency here
+                    color_mask = np.zeros_like(image)
+                    color_mask[:, :, :] = color
+                    masked_image = cv2.bitwise_and(color_mask, color_mask, mask=mask)
+                    mask_image = cv2.addWeighted(
+                        masked_image, alpha, mask_image, 1 - alpha, 0
+                    )
         else:
             color = colors[int(box[-1])]
             box_label(image, box, label, color)
+
+            # mask_image = cv2.addWeighted(mask_image, 1, mask, alpha, 0)
+            # mask_image = cv2.addWeighted(mask_image, 1, color, alpha, 0)
+
+        # combine original image with mask image
+    image = cv2.addWeighted(image, 1, mask_image, 1, 0)
 
     return image
     # show image
@@ -243,9 +264,13 @@ def main():
         ret, frame = vid.read()
         image = np.asarray(frame)
         results = model.predict(image)
-        image = plot_bboxes(image, results[0].boxes.boxes, score=True, conf=0.6)
-        print(results[0].boxes.boxes.shape)
-        print(results[0].masks.masks.shape)
+        image = plot_bboxes(
+            image,
+            results[0].boxes.boxes,
+            masks=results[0].masks.masks,
+            score=True,
+            conf=0.6,
+        )
         # Display the resulting frame
         # cv2.imshow("frame", frame)
         cv2.imshow("image", image)  # if used in Python
