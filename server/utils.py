@@ -18,7 +18,7 @@ def box_label(
         - txt_color (tuple): color to draw label
 
     """
-
+    print(image.shape)
     lw = max(round(sum(image.shape) / 2 * 0.003), 2)
     p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
     cv2.rectangle(image, p1, p2, color, thickness=lw, lineType=cv2.LINE_AA)
