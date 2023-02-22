@@ -245,6 +245,7 @@ def plot_bboxes(
             if mask is None:
                 continue
             color = colors[int(boxes[i][-1])]
+            mask = mask.cpu()
             mask_image[mask > 0] = color
 
     # Blend the original image and the mask image using transparency
