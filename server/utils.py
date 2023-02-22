@@ -261,7 +261,7 @@ def plot_bboxes(
                     mask = masks[i]
                     if len(mask.shape) == 3:
                         mask = mask[..., 0]  # take first channel if multi-channel mask
-                    mask = (mask * 255).numpy().astype(np.uint8)
+                    mask = (mask * 255).cpu().numpy().astype(np.uint8)
                     alpha = 0.5  # adjust transparency here
                     color_mask = np.zeros_like(image)
                     color_mask[:, :, :] = color
