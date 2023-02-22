@@ -20,7 +20,7 @@ def box_label(
     """
     print(type(image))
     print(image.shape)
-    image = np.ascontiguousarray(image, dtype=np.uint8)
+    # image = np.ascontiguousarray(image, dtype=np.uint8)
     lw = max(round(sum(image.shape) / 2 * 0.003), 2)
     print(lw)
     p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
@@ -239,41 +239,26 @@ def plot_bboxes(
 
     mask_image = np.zeros_like(image)
 
-    # plot each boxes
+    # Draw masks on the mask image with separate colors
+    for i, mask in enumerate(masks):
+        if boxes[i][-2] > conf:
+            if mask is None:
+                continue
+            color = colors[int(boxes[i][-1])]
+            mask_image[mask > 0] = color
+
+    # Blend the original image and the mask image using transparency
+    alpha = 0.5
+    blended_image = cv2.addWeighted(image, 1 - alpha, mask_image, alpha, 0)
+
+    # Draw bounding boxes and labels on the blended image
     for i, box in enumerate(boxes):
-        # add score in label if score=True
-        if score:
-            label = (
-                labels[int(box[-1]) + 1]
-                + " "
-                + str(round(100 * float(box[-2]), 1))
-                + "%"
-            )
-        else:
-            label = labels[int(box[-1]) + 1]
-        # filter every box under conf threshold if conf threshold setted
-        if conf:
-            if box[-2] > conf:
-                color = colors[int(box[-1])]
-                box_label(image, box, label, color)
-
-                if masks is not None:
-                    mask = masks[i]
-                    if len(mask.shape) == 3:
-                        mask = mask[..., 0]  # take first channel if multi-channel mask
-                    mask = (mask * 255).cpu().numpy().astype(np.uint8)
-                    alpha = 0.5  # adjust transparency here
-                    color_mask = np.zeros_like(image)
-                    color_mask[:, :, :] = color
-                    masked_image = cv2.bitwise_and(color_mask, color_mask, mask=mask)
-                    mask_image = cv2.addWeighted(
-                        masked_image, alpha, mask_image, 1 - alpha, 0
-                    )
-        else:
+        if box[-2] > conf:
+            if conf is not None and score:
+                label = f"{labels[int(box[-1])+1] + ' ' + str(round(100 * float(box[-2]), 1)) + '%'}"
+            else:
+                label = labels[int(box[-1]) + 1]
             color = colors[int(box[-1])]
-            box_label(image, box, label, color)
+            box_label(blended_image, box, label=label, color=color)
 
-        # combine original image with mask image
-    image = cv2.addWeighted(image, 1, mask_image, 1, 0)
-
-    return image
+    return blended_image
